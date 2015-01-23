@@ -82,13 +82,34 @@ def analyze_content(item)
 
 end
 
-def analyze_action_node(action_node)
-  child_nodes = action_node.xpath('/*[starts-with(@class, "action-"')
-  child_nodes.each do |node|
-    reg_res = /action-(\w+)/.match(node["class"])
-    next if reg_res.nil?
-    arg_name =  reg_res[1]
-    arg_value = node["data-value"] || node.content
+def merge_hash_res(res_array)
+  res_array.each do |res|
+
+  end
+end
+
+def analyze_node_children(action_node)
+  res_array = []
+  action_node.element_children.each do |child|
+    if child.key?("class")
+      reg_res = /action-([\w-]+)/.match(child["class"])
+      if not reg_res.nil?
+        arg_name =  reg_res[1]
+        arg_value = node["data-value"] || node.content
+      end
+      child_res = analyze_node_children(child)
+      if arg_name && arg_value
+        if child_res
+          info = {arg_name => {arg_value => child_res}}
+        else
+          info = {arg_name => arg_value}
+      else
+        info = child_res
+      end
+      res_array.push info
+    end
+  end
+
 
   end
 end
