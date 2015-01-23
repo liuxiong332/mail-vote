@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="action_id" content="1234">
+
+    <title>Bootstrap 101 Template</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.min.css"></link>
+    <style type="text/css">
+      * {
+        font-family: "Microsoft YaHei", sans-serif;
+      }
+    </style>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+    <action type="vote" id="1234">
+      <div class="jumbotron">
+        <h1>开始投票</h1>
+        <p class="action-title">用微信扫一扫，分享到朋友圈(自动适配手机屏幕)</p>
+      </div>
+
+      <form>
+        <div class="form-group">
+          <label class="control-label">投票选项</label>
+
+          <ul class="list-group">
+            <li class="list-group-item action-option">情况一 <span class="badge">14</span>
+            </li>
+            <br/>
+            <div class="progress">
+              <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="50" style="width: 60%;">
+                60%
+              </div>
+            </div>
+            <li class="list-group-item action-option">情况二: 可以把多个字体名称作为一个“回退”系统来保存。如果浏览器不支持第一个字体，</li>
+            <br/>
+            <div class="progress">
+              <div class="progress-bar" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="50" style="width: 30%;">
+                10%
+              </div>
+            </div>
+
+            <li class="list-group-item action-option">情况三</li>
+          </ul>
+        </div>
+
+        <div class="form-group">
+          <label class="control-label">发起人</label>
+          <p class="form-control-static action-promotor">liuxiong@kingsoft.com</p>
+        </div>
+        <div class="form-group">
+          <label class="control-label">邀请投票人</label>
+          <ul >
+            <li class="action-receiver">liuxiong@kingsoft.com</li>
+            <li class="action-receiver">liuxiong@kingsoft.com</li>
+          </ul>
+        </div>
+
+      </form>
+    </action>
+    </div>
+  </body>
+</html>
