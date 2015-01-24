@@ -3,6 +3,7 @@ require 'viewpoint'
 require 'nokogiri'
 require 'logger'
 require 'mongo'
+require 'response_parser'
 
 include Mongo
 include Viewpoint::EWS
@@ -25,10 +26,10 @@ def sync_collect
   @sync_collect
 end
 
+Email = "vote@bolt07.com"
 def ews_client
   if not @ews_client
     endpoint = "https://ex07.bolt07.com/EWS/Exchange.asmx"
-    email = "vote@bolt07.com"
     user = "vote"
     password = "a111111"
 
@@ -72,64 +73,16 @@ def sync_inbox_message
   block_given? ? items: nil
 end
 
-def analyze_content(item)
-  if (item.body_type != :html)
-    return
-    html_doc = Nokogiri::HTML(item.body)
-    action_node = html_doc.at_css("action[type=vote]")
-    return if action_node.nil?
-    action_info = {stage: action_node["stage"], id: action_node["id"]}
-
+def parse_item(item)
+  return if item.body_type != :html
+  html_doc = Nokogiri::HTML(item.body)
+  hash_res = ResponsePraser.new.parse(html_doc)
+  return if hash_res.nil?
+  stage = hash_res["stage"]
+  send(stage, hash_res) if respond_to?(stage)
 end
 
-def merge_hash_res(res_array)
-  res_array.each do |res|
 
-  end
-end
-
-def analyze_node_children(action_node)
-  res_array = []
-  action_node.element_children.each do |child|
-    if child.key?("class")
-      reg_res = /action-([\w-]+)/.match(child["class"])
-      if not reg_res.nil?
-        arg_name =  reg_res[1]
-        arg_value = node["data-value"] || node.content
-      end
-      child_res = analyze_node_children(child)
-      if arg_name && arg_value
-        if child_res
-          info = {arg_name => {arg_value => child_res}}
-        else
-          info = {arg_name => arg_value}
-      else
-        info = child_res
-      end
-      res_array.push info
-    end
-  end
-
-
-  end
-end
-
-def build_start_html
-  builder = Nokogiri::HTML::Builder.new(encoding: "UTF-8") do |doc|
-    doc.html {
-      doc.body {
-        doc.action(type: "vote", state: "start", id: ActionId) {
-          doc.div("去哪儿吃饭", class: "action-subject")
-          doc.div("吃饭好啊", class: "action-content")
-          doc.div("地点一", class: "action-option")
-          doc.div("地点二", class: "action-option")
-          doc.div("地点三", class: "action-option")
-          doc.div(email, class: "action-receiver")
-        }
-      }
-    }
-  end
-end
 
 # log.info(items[0].sender.email_address)
 # log.info(items[0].body)
