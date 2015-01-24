@@ -20,11 +20,12 @@ class RequestBuilder
   def action_param(doc, param_key, value)
     param_key = transfer_key(param_key)
     if value.is_a?(Hash)
-      doc.div()
-    end
-    if value.is_a? Array
+      doc.div(value.keys[0], class: param_key) {
+        action_params(doc, value.values[0])
+      }
+    elsif value.is_a? Array
       value.each do |each_val|
-        doc.div(each_val, class: param_key)
+        action_param(doc, param_key, each_val)
       end
     else
       doc.div(value, class: param_key)
