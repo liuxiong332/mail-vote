@@ -14,13 +14,19 @@ class RequestBuilder
   end
 
   def transfer_key(key)
-    "action_" + key.gsub(/_/, '-')
+    "action-" + key.to_s.gsub(/_/, '-')
+  end
+
+  def present(value)
+    if value.is_a?(Array) && value.empty? then false
+    elsif value.nil? then false
+    end
+    true
   end
 
   def action_param(doc, param_key, value)
-    param_key = transfer_key(param_key)
-    if value.is_a?(Hash)
-      doc.div(value.keys[0], class: param_key) {
+    if value.is_a?(Hash) && present(value.values[0])
+      doc.div("data-value" => value.keys[0], class: transfer_key(param_key)) {
         action_params(doc, value.values[0])
       }
     elsif value.is_a? Array
@@ -28,7 +34,7 @@ class RequestBuilder
         action_param(doc, param_key, each_val)
       end
     else
-      doc.div(value, class: param_key)
+      doc.div(value, class: transfer_key(param_key))
     end
   end
 
@@ -39,7 +45,7 @@ class RequestBuilder
   end
 
   def action(options)
-    new_action(options.stage, options.id) do |doc|
+    new_action(options["stage"], options["id"]) do |doc|
       options = options.reject {|key| ["stage", "id"].include?(key) }
       action_params(doc, options)
     end

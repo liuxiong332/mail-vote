@@ -11,7 +11,7 @@ class EwsClient
     @ews_client = cli
     @inbox = @ews_client.get_folder_by_name('inbox')
 
-    @request_builder = RequestBuilder
+    @request_builder = RequestBuilder.new
   end
 
   def sync_inbox_message(sync_collect)

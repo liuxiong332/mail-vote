@@ -3,7 +3,7 @@ require 'viewpoint'
 require 'nokogiri'
 require 'logger'
 require 'mongo'
-require 'response_parser'
+# require 'response_parser'
 
 include Mongo
 include Viewpoint::EWS
@@ -11,41 +11,9 @@ include Viewpoint::EWS
 log = Logger.new("mail-receiver")
 log.level = Logger::INFO
 
-def mongo_client
-  if not @mongo_client
-    @mongo_client = MongoClient.new("localhost", 27017)
-  end
-  @mongo_client
-end
-
-def sync_collect
-  if not @sync_collect
-    db = mongo_client.db("mail-vote")
-    @sync_collect = db.collection("inbox_sync_state")
-  end
-  @sync_collect
-end
 
 Email = "vote@bolt07.com"
-def ews_client
-  if not @ews_client
-    endpoint = "https://ex07.bolt07.com/EWS/Exchange.asmx"
-    user = "vote"
-    password = "a111111"
 
-    cli = Viewpoint::EWSClient.new endpoint, user, password, http_opts: { ssl_verify_mode: 0}
-    cli.ews.server_version = "none"
-    @ews_client = cli
-  end
-  @ews_client
-end
-
-def inbox
-  if not @inbox
-    @inbox = ews_client.get_folder_by_name('inbox')
-  end
-  @inbox
-end
 
 # mail_content = File.read(File.expand_path('../output/mail.html', File.dirname(__FILE__)))
 # cli.send_message(subject: "ruby send test email", body: mail_content,
@@ -53,25 +21,7 @@ end
 
 ActionId = 12
 
-def sync_inbox_message
-  items = []
-  sync_set = sync_collect.find(action_id: ActionId).to_a
-  sync_item = sync_set.empty? ? nil : sync_set[0]
-  unless inbox.synced?
-    changes = inbox.sync_items!(sync_item ? sync_item["sync_state"] : nil)
-    changes[:create].each do |message|
-      item = ews_client.get_item(message.id)
-      block_given? ? yield(item) : items.push(item)
-    end
-  end
 
-  if sync_item.nil?
-    sync_collect.insert({action_id: ActionId, sync_state: inbox.sync_state})
-  else
-    sync_item["sync_state"] = inbox.sync_state
-  end
-  block_given? ? items: nil
-end
 
 def parse_item(item)
   return if item.body_type != :html
@@ -83,6 +33,19 @@ def parse_item(item)
 end
 
 
+ mongo_client = MongoClient.new("localhost", 27017)
+
+db = mongo_client.db("mail-vote")
+test_collect = db.collection("test")
+id = test_collect.insert({stage: "start", id: "my_id", option: ["option 1", "option 2"] })
+doc = test_collect.find(_id: id).to_a[0]
+puts doc.to_s
+doc["id"] = "next_id"
+puts doc.to_s
+doc["option"][0] = {doc["option"][0] => {"receiver" => "liuxiong"} }
+puts doc.to_s
+test_collect.update({_id: id}, doc)
+puts test_collect.find(_id: id).to_a[0].to_s
 
 # log.info(items[0].sender.email_address)
 # log.info(items[0].body)
