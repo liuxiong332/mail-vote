@@ -6,6 +6,7 @@ class ResponseParser
   def merge_hash_res(res_array)
     merge_res = {}
     res_array.each do |res|
+      next if res.nil?
       res.each do |key, value|
         if merge_res.key? key
           origin_val = merge_res[key]
@@ -64,7 +65,7 @@ class ResponseParser
   def parse(doc)
     action_node = doc.at_css("action[type=vote]")
     unless action_node.nil?
-      hash_res = analyze_node_children(action_node)
+      hash_res = analyze_node_children(action_node) || {}
       hash_res["stage"] = action_node["stage"]
       hash_res["id"] = action_node["id"]
       hash_res

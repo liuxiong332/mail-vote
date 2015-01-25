@@ -1,4 +1,5 @@
 require 'request_builder'
+require "viewpoint"
 
 class EwsClient
   attr_accessor :email
@@ -17,18 +18,20 @@ class EwsClient
   def sync_inbox_message(sync_collect)
     items = []
     sync_item = sync_collect.find_one
-    unless inbox.synced?
-      changes = inbox.sync_items!(sync_item ? sync_item["sync_state"] : nil)
-      changes[:create].each do |message|
-        item = ews_client.get_item(message.id)
+    unless @inbox.synced?
+      changes = @inbox.sync_items!(sync_item ? sync_item["sync_state"] : nil)
+      changes && changes.key?(:create) && changes[:create].each do |message|
+        item = @ews_client.get_item(message.id)
+        puts "item is ready"
         block_given? ? yield(item) : items.push(item)
       end
     end
 
     if sync_item.nil?
-      sync_collect.insert({sync_state: inbox.sync_state})
+      sync_collect.insert({sync_state: @inbox.sync_state})
     else
-      sync_item["sync_state"] = inbox.sync_state
+      sync_item["sync_state"] = @inbox.sync_state
+      sync_collect.update({"_id" => sync_item["_id"]}, sync_item)
     end
     block_given? ? items: nil
   end
@@ -38,7 +41,15 @@ class EwsClient
   # @option opts [Array] :to_recipients An array of e-mail addresses to send to
   # @return [Message,Boolean] Returns true if the message is sent, false if
   def respond_action(options, to_recipients)
+    to_recipients = [to_recipients] unless to_recipients.is_a?(Array)
     doc = @request_builder.action(options)
-    ews_client.send_message(subject: options["subject"], body: doc.to_s, to_recipients: to_recipients)
+    puts "begin to send message"
+    msg, send_res = @ews_client.send_message(subject: options["subject"], body: doc.to_s,
+      body_type: "HTML", to_recipients: to_recipients)
+    puts "send result: ", send_res
+  end
+
+  def clear_inbox
+    @inbox.items.each {|item| item.delete! }
   end
 end

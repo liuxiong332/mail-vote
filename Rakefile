@@ -29,3 +29,11 @@ Rake::TestTask.new do |t|
 	t.libs << "lib"
 	t.test_files = FileList['test/*_test.rb']
 end
+
+task :run do
+	ruby "-Ilib lib/run_server.rb"
+end
+
+task :autorun do
+	ruby "-Ilib lib/autorun.rb"
+end

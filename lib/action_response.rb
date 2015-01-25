@@ -6,32 +6,37 @@ class ActionResponse
     @action_collect = action_collect
   end
 
-  def start(params)
+  def start(params, from)
     params["promotor_id"] = params["id"]
     params.delete("stage")
     id = @action_collect.insert(params)
-    params["id"] = id
-    receiver_vote(params)
-    promotor_start(params)
+    params["id"] = id.to_s
+    item = get_item(params)
+    puts item ? "insert item not nil" : "insert item is nil"
+
+    receiver_vote_request(params)
+    promotor_start_request(params)
   end
 
-  def receiver_vote(params)
+  def receiver_vote_request(params)
     params["stage"] = "receiver_vote"
     @ews_client.respond_action(params, params["receiver"])
   end
 
-  def promotor_start(params)
+  def promotor_start_request(params)
     params["stage"] = "promotor_start"
     @ews_client.respond_action(params, params["promotor"])
   end
 
   def get_item(params)
-    set = @action_collect.find("_id" => params["id"]).to_a
+    id = params["id"].is_a?(String) ? BSON::ObjectId.from_string(params["id"]) : params["id"]
+    set = @action_collect.find("_id" => id).to_a
     set.empty? ? nil : set[0]
   end
 
   def vote(params, from)
     item = get_item(params)
+    puts item ? item : "item is nil"
     return if item.nil?
     options = item["option"]
 
@@ -46,30 +51,29 @@ class ActionResponse
       options[user_option] = []
     end
     options[user_option].push({"receiver" => from})
+    puts "generate item:", item
     @action_collect.update({"_id" => item["_id"]}, item)
 
-    promotor_fresh(item)
-    promotor_end(item)
+    promotor_fresh_request(item)
+    promotor_end_request(item)
   end
 
-  def promotor_fresh(params)
+  def promotor_fresh_request(params)
     params["stage"] = "promotor_fresh"
     @ews_client.respond_action(params, params["promotor"])
   end
 
-  def promotor_end(params)
+  def promotor_end_request(params)
     params["stage"] = "promotor_end"
     @ews_client.respond_action(params, params["promotor"])
   end
 
-  def publish
-    set = @action_collect.find("_id" => params["id"]).to_a
-    return if set.empty?
-    item = set[0]
+  def publish(params, from)
+    item = get_item(params)
     receiver_publish(item)
   end
 
-  def receiver_publish(params)
+  def receiver_publish_request(params)
     params["stage"] = "receiver_publish"
     @ews_client.respond_action(params, params["promotor"])
   end
