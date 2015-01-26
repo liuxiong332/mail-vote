@@ -22,7 +22,6 @@ class EwsClient
       changes = @inbox.sync_items!(sync_item ? sync_item["sync_state"] : nil)
       changes && changes.key?(:create) && changes[:create].each do |message|
         item = @ews_client.get_item(message.id)
-        puts "item is ready"
         block_given? ? yield(item) : items.push(item)
       end
     end
@@ -43,13 +42,37 @@ class EwsClient
   def respond_action(options, to_recipients)
     to_recipients = [to_recipients] unless to_recipients.is_a?(Array)
     doc = @request_builder.action(options)
-    puts "begin to send message"
     msg, send_res = @ews_client.send_message(subject: options["subject"], body: doc.to_s,
       body_type: "HTML", to_recipients: to_recipients)
-    puts "send result: ", send_res
   end
 
   def clear_inbox
     @inbox.items.each {|item| item.delete! }
+  end
+end
+
+class FakeEwsClient
+  attr_accessor :email
+
+  def initialize(endpoint, email, password)
+    @email = email
+    @mails = []
+    @request_builder = RequestBuilder.new
+  end
+
+  def sync_inbox_message(sync_collect)
+    yield @mails.pop
+  end
+
+  # respond to to_recipients by sending message
+  # @param [Hash] options to build document
+  # @option opts [Array] :to_recipients An array of e-mail addresses to send to
+  # @return [Message,Boolean] Returns true if the message is sent, false if
+  def respond_action(options, to_recipients)
+    doc = @request_builder.action(options)
+    @mails.push(doc)
+  end
+
+  def clear_inbox
   end
 end

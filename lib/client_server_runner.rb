@@ -1,10 +1,15 @@
 require "vote_server"
 require "response_parser"
+require "nokogiri"
 require "logger"
+require "ews_client"
+require "action_response"
 
 class ClientServerRunner < VoteServer
   def initialize
     super
+    @ews_client = FakeEwsClient.new(@config["endpoint"], @config["email"], @config["password"])
+    @action_response = ActionResponse.new(@ews_client, @mongo_client.action_collect)
     @end = false
     @logger = Logger.new("client_server_runner.log")
     @logger.level = Logger::INFO
@@ -32,32 +37,35 @@ class ClientServerRunner < VoteServer
   end
 
   def receiver_publish(params)
-    puts params
     @end = true
+    puts "receiver publish successfully!"
   end
 
   def run
     puts "client run"
     # @ews_client.clear_inbox
-    # start_vote
+    start_vote
     until @end
       @ews_client.sync_inbox_message(@mongo_client.sync_collect) do |item|
         parse_item(item)
       end
-      sleep(10)
     end
   end
 
   def parse_item(item)
-    @logger.info item.body
-    return if item.body_type != "HTML"
-    html_doc = Nokogiri::HTML(item.body)
+    if item.is_a?(Nokogiri::HTML::Document)
+      html_doc = item
+    else
+      return if item.body_type != "HTML"
+      html_doc = Nokogiri::HTML(item.body)
+    end
     hash_res = ResponseParser.new.parse(html_doc)
     return if hash_res.nil?
     @logger.info hash_res
     stage = hash_res["stage"]
     if @action_response.respond_to?(stage)
-      @action_response.send(stage, hash_res, item.from.email_address)
+      from = item.respond_to?("from") ? item.from.email_address : nil
+      @action_response.send(stage, hash_res, from)
     elsif respond_to?(stage)
       send(stage, hash_res)
     end
